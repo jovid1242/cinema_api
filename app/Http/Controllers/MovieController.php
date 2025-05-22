@@ -17,27 +17,22 @@ class MovieController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Movie::query();
-
-        // Поиск по названию
+ 
         if ($request->has('search')) {
             $search = $request->get('search');
             $query->where('title', 'like', "%{$search}%");
         }
-
-        // Фильтр по жанру
+ 
         if ($request->has('genre')) {
             $query->where('genre', $request->get('genre'));
         }
-
-        // Фильтр по году выпуска
+ 
         if ($request->has('year')) {
             $query->where('release_year', $request->get('year'));
         }
-
-        // Получаем только активные фильмы
+ 
         $query->where('is_active', true);
-
-        // Сортировка
+ 
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
@@ -51,9 +46,9 @@ class MovieController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     *  
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Request   
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
@@ -87,15 +82,14 @@ class MovieController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     *  
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function show($id): JsonResponse
     {
-        $movie = Movie::with(['sessions' => function ($query) {
-            // Получаем только будущие сеансы
+        $movie = Movie::with(['sessions' => function ($query) { 
             $query->where('start_time', '>', now())
                   ->where('is_active', true)
                   ->orderBy('start_time');
@@ -107,8 +101,7 @@ class MovieController extends Controller
                 'message' => 'Фильм не найден'
             ], 404);
         }
-
-        // Группируем сеансы по датам для удобства выбора
+ 
         $groupedSessions = $movie->sessions->groupBy(function ($session) {
             return $session->start_time->format('Y-m-d');
         });
@@ -122,9 +115,9 @@ class MovieController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     *  
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Request   
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
@@ -168,7 +161,7 @@ class MovieController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     *  
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -191,7 +184,6 @@ class MovieController extends Controller
             ], 404);
         }
 
-        // Вместо удаления делаем фильм неактивным
         $movie->update(['is_active' => false]);
 
         return response()->json([

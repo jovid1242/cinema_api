@@ -13,7 +13,7 @@ use Illuminate\Http\JsonResponse;
 class SessionController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     *  
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -32,7 +32,7 @@ class SessionController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     *  
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -55,7 +55,7 @@ class SessionController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        // Проверяем, что фильм и зал активны
+         
         $movie = Movie::findOrFail($validated['movie_id']);
         $hall = Hall::findOrFail($validated['hall_id']);
 
@@ -73,7 +73,7 @@ class SessionController extends Controller
             ], 422);
         }
 
-        // Проверяем, нет ли пересечений с другими сеансами в этом зале
+         
         $conflictingSession = Session::where('hall_id', $validated['hall_id'])
             ->where('is_active', true)
             ->where(function ($query) use ($validated, $movie) {
@@ -104,7 +104,7 @@ class SessionController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     *  
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -120,8 +120,7 @@ class SessionController extends Controller
                 'message' => 'Сеанс не найден'
             ], 404);
         }
-
-        // Добавляем информацию о занятых местах
+ 
         $occupiedSeats = $session->tickets()
             ->where('status', '!=', 'cancelled')
             ->select('row_number', 'seat_number')
@@ -136,9 +135,9 @@ class SessionController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     *  
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Request   
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
@@ -159,8 +158,7 @@ class SessionController extends Controller
                 'message' => 'Сеанс не найден'
             ], 404);
         }
-
-        // Проверяем, не начался ли уже сеанс
+ 
         if ($session->start_time <= now()) {
             return response()->json([
                 'status' => 'error',
@@ -175,8 +173,7 @@ class SessionController extends Controller
             'price' => 'sometimes|required|numeric|min:0|max:10000',
             'is_active' => 'sometimes|boolean'
         ]);
-
-        // Если меняется фильм или зал, проверяем их активность
+ 
         if (isset($validated['movie_id'])) {
             $movie = Movie::findOrFail($validated['movie_id']);
             if (!$movie->is_active) {
@@ -196,8 +193,7 @@ class SessionController extends Controller
                 ], 422);
             }
         }
-
-        // Если меняется время или зал, проверяем пересечения
+ 
         if (isset($validated['start_time']) || isset($validated['hall_id'])) {
             $movieId = $validated['movie_id'] ?? $session->movie_id;
             $hallId = $validated['hall_id'] ?? $session->hall_id;
@@ -236,7 +232,7 @@ class SessionController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     *  
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -259,7 +255,6 @@ class SessionController extends Controller
             ], 404);
         }
 
-        // Проверяем, не начался ли уже сеанс
         if ($session->start_time <= now()) {
             return response()->json([
                 'status' => 'error',
@@ -267,7 +262,6 @@ class SessionController extends Controller
             ], 422);
         }
 
-        // Проверяем, есть ли купленные билеты
         $hasPaidTickets = $session->tickets()
             ->where('status', 'paid')
             ->exists();
@@ -279,7 +273,6 @@ class SessionController extends Controller
             ], 422);
         }
 
-        // Вместо удаления делаем сеанс неактивным
         $session->update(['is_active' => false]);
 
         return response()->json([

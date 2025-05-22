@@ -71,6 +71,105 @@ class AuthController extends Controller
     {
         return response()->json(auth('api')->user());
     }
+    
+    /**
+     * 
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getUsers()
+    { 
+        $currentUser = auth('api')->user();
+        if ($currentUser->role !== 'admin') {
+            return response()->json(['error' => 'Доступ запрещен. Требуются права администратора.'], 403);
+        }
+        
+        $users = User::all();
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $users
+        ]);
+    }
+    
+    /**
+     *  
+     *
+     * @param  Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateUser(Request $request, $id)
+    { 
+        $currentUser = auth('api')->user();
+        if ($currentUser->role !== 'admin') {
+            return response()->json(['error' => 'Доступ запрещен. Требуются права администратора.'], 403);
+        }
+         
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['error' => 'Пользователь не найден'], 404);
+        }
+         
+        $validator = Validator::make($request->all(), [
+            'name' => 'string|between:2,100',
+            'email' => 'string|email|max:100|unique:users,email,'.$id,
+            'role' => 'string|in:user,admin'
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        } 
+        if ($request->has('name')) {
+            $user->name = $request->name;
+        }
+        
+        if ($request->has('email')) {
+            $user->email = $request->email;
+        }
+        
+        if ($request->has('role')) {
+            $user->role = $request->role;
+        }
+        
+        $user->save();
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Данные пользователя обновлены',
+            'data' => $user
+        ]);
+    }
+
+    /**
+     *  
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteUser($id)
+    { 
+        $currentUser = auth('api')->user();
+        if ($currentUser->role !== 'admin') {
+            return response()->json(['error' => 'Доступ запрещен. Требуются права администратора.'], 403);
+        }
+         
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['error' => 'Пользователь не найден'], 404);
+        }
+         
+        if ($currentUser->id == $id) {
+            return response()->json(['error' => 'Нельзя удалить собственный аккаунт'], 400);
+        }
+         
+        $user->delete();
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Пользователь успешно удален'
+        ]);
+    }
 
     protected function createNewToken($token)
     {

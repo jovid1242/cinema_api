@@ -7,6 +7,7 @@ use App\Http\Controllers\MovieController;
 use App\Http\Controllers\HallController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\StatisticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +28,7 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'auth'
 ], function ($router) {
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login'])->name('login');
     Route::post('register', [AuthController::class, 'register']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('get_me', [AuthController::class, 'getMe']);
@@ -43,4 +44,12 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/tickets/{id}', [TicketController::class, 'update']);
     Route::delete('/tickets/{id}', [TicketController::class, 'destroy']);
     Route::get('/sessions/{sessionId}/seats', [TicketController::class, 'getAvailableSeats']);
+     
+    Route::get('/statistics/overview', [StatisticsController::class, 'overview']);
+     
+    Route::get('/users', [AuthController::class, 'getUsers']);
+  
+    Route::put('/users/{id}', [AuthController::class, 'updateUser']);
+     
+    Route::delete('/users/{id}', [AuthController::class, 'deleteUser']);
 });

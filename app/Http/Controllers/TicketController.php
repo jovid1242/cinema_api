@@ -14,7 +14,7 @@ use Carbon\Carbon;
 class TicketController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     *  
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -22,8 +22,7 @@ class TicketController extends Controller
     {
         $user = Auth::user();
         $query = Ticket::with(['session.movie', 'session.hall']);
-
-        // Администраторы видят все билеты, пользователи только свои
+ 
         if ($user->role !== 'admin') {
             $query->where('user_id', $user->id);
         }
@@ -38,22 +37,27 @@ class TicketController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
+     *  
+     * @param  \Illuminate\Http\Request   
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
         $user = Auth::user();
         
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Пользователь не аутентифицирован'
+            ], 401);
+        }
+        
         $validated = $request->validate([
             'session_id' => 'required|exists:sessions,id',
             'row_number' => 'required|integer|min:1',
             'seat_number' => 'required|integer|min:1',
         ]);
-
-        // Проверяем существование и активность сеанса
+ 
         $session = Session::with('hall')->findOrFail($validated['session_id']);
         
         if (!$session->is_active) {
@@ -70,7 +74,6 @@ class TicketController extends Controller
             ], 422);
         }
 
-        // Проверяем существование места в зале
         if ($validated['row_number'] > $session->hall->rows || 
             $validated['seat_number'] > $session->hall->seats_per_row) {
             return response()->json([
@@ -79,7 +82,6 @@ class TicketController extends Controller
             ], 422);
         }
 
-        // Проверяем, не занято ли место
         $isSeatOccupied = Ticket::where('session_id', $validated['session_id'])
             ->where('row_number', $validated['row_number'])
             ->where('seat_number', $validated['seat_number'])
@@ -91,20 +93,7 @@ class TicketController extends Controller
                 'status' => 'error',
                 'message' => 'Место уже занято'
             ], 422);
-        }
-
-        // Проверяем, нет ли у пользователя других активных броней на этот сеанс
-        $hasActiveReservation = Ticket::where('session_id', $validated['session_id'])
-            ->where('user_id', $user->id)
-            ->where('status', 'reserved')
-            ->exists();
-
-        if ($hasActiveReservation) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'У вас уже есть активная бронь на этот сеанс'
-            ], 422);
-        }
+        } 
 
         try {
             DB::beginTransaction();
@@ -118,8 +107,7 @@ class TicketController extends Controller
                 'price' => $session->price,
                 'status' => 'reserved'
             ]);
-
-            // Устанавливаем время жизни брони (30 минут)
+ 
             $ticket->expires_at = now()->addMinutes(30);
             $ticket->save();
 
@@ -133,6 +121,9 @@ class TicketController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+             
+            \Log::error('Ошибка бронирования билета: ' . $e->getMessage());
+            
             return response()->json([
                 'status' => 'error',
                 'message' => 'Произошла ошибка при бронировании билета'
@@ -141,7 +132,7 @@ class TicketController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     *  
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -158,8 +149,7 @@ class TicketController extends Controller
                 'message' => 'Билет не найден'
             ], 404);
         }
-
-        // Проверяем права доступа
+ 
         if ($user->role !== 'admin' && $ticket->user_id !== $user->id) {
             return response()->json([
                 'status' => 'error',
@@ -174,9 +164,9 @@ class TicketController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     *  
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Request  
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
@@ -191,8 +181,7 @@ class TicketController extends Controller
                 'message' => 'Билет не найден'
             ], 404);
         }
-
-        // Проверяем права доступа
+ 
         if ($user->role !== 'admin' && $ticket->user_id !== $user->id) {
             return response()->json([
                 'status' => 'error',
@@ -203,8 +192,7 @@ class TicketController extends Controller
         $validated = $request->validate([
             'status' => 'required|in:paid,cancelled'
         ]);
-
-        // Проверяем текущий статус билета
+ 
         if ($ticket->status === 'paid') {
             return response()->json([
                 'status' => 'error',
@@ -218,8 +206,7 @@ class TicketController extends Controller
                 'message' => 'Билет уже отменен'
             ], 422);
         }
-
-        // Проверяем, не истекло ли время брони
+ 
         if ($ticket->status === 'reserved' && $ticket->expires_at < now()) {
             $ticket->update(['status' => 'cancelled']);
             return response()->json([
@@ -227,8 +214,7 @@ class TicketController extends Controller
                 'message' => 'Время бронирования истекло'
             ], 422);
         }
-
-        // Проверяем, не начался ли сеанс
+ 
         if ($ticket->session->start_time <= now()) {
             return response()->json([
                 'status' => 'error',
@@ -240,8 +226,7 @@ class TicketController extends Controller
             DB::beginTransaction();
 
             $ticket->update($validated);
-
-            // Если билет оплачен, сбрасываем время истечения
+ 
             if ($validated['status'] === 'paid') {
                 $ticket->expires_at = null;
                 $ticket->save();
@@ -265,7 +250,7 @@ class TicketController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     *  
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -282,7 +267,6 @@ class TicketController extends Controller
             ], 404);
         }
 
-        // Проверяем права доступа
         if ($user->role !== 'admin' && $ticket->user_id !== $user->id) {
             return response()->json([
                 'status' => 'error',
@@ -290,7 +274,6 @@ class TicketController extends Controller
             ], 403);
         }
 
-        // Проверяем статус билета
         if ($ticket->status === 'paid') {
             return response()->json([
                 'status' => 'error',
@@ -298,7 +281,6 @@ class TicketController extends Controller
             ], 422);
         }
 
-        // Проверяем, не начался ли сеанс
         if ($ticket->session->start_time <= now()) {
             return response()->json([
                 'status' => 'error',
@@ -328,7 +310,7 @@ class TicketController extends Controller
     }
 
     /**
-     * Получить список свободных мест для сеанса.
+     *  
      *
      * @param  int  $sessionId
      * @return \Illuminate\Http\JsonResponse
@@ -357,14 +339,12 @@ class TicketController extends Controller
                 'message' => 'Сеанс уже начался'
             ], 422);
         }
-
-        // Получаем все занятые места
+ 
         $occupiedSeats = Ticket::where('session_id', $sessionId)
             ->where('status', '!=', 'cancelled')
             ->select('row_number', 'seat_number')
             ->get();
-
-        // Формируем массив всех мест в зале
+ 
         $allSeats = [];
         for ($row = 1; $row <= $session->hall->rows; $row++) {
             for ($seat = 1; $seat <= $session->hall->seats_per_row; $seat++) {

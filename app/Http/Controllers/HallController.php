@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 class HallController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     *  
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -27,9 +27,9 @@ class HallController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     *  
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Request   
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request): JsonResponse
@@ -60,7 +60,7 @@ class HallController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     *  
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -83,9 +83,9 @@ class HallController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     *  
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Request  
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
@@ -114,8 +114,7 @@ class HallController extends Controller
             'description' => 'nullable|string|max:1000',
             'is_active' => 'sometimes|boolean'
         ]);
-
-        // Проверяем, есть ли активные сеансы в зале
+ 
         if (isset($validated['is_active']) && !$validated['is_active']) {
             $activeSessions = $hall->sessions()
                 ->where('start_time', '>', now())
@@ -140,7 +139,7 @@ class HallController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * 
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -162,8 +161,7 @@ class HallController extends Controller
                 'message' => 'Зал не найден'
             ], 404);
         }
-
-        // Проверяем, есть ли активные сеансы в зале
+ 
         $activeSessions = $hall->sessions()
             ->where('start_time', '>', now())
             ->where('is_active', true)
@@ -175,8 +173,7 @@ class HallController extends Controller
                 'message' => 'Невозможно удалить зал с активными сеансами'
             ], 422);
         }
-
-        // Вместо удаления делаем зал неактивным
+ 
         $hall->update(['is_active' => false]);
 
         return response()->json([
