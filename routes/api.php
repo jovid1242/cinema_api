@@ -9,6 +9,7 @@ use App\Http\Controllers\SessionController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\StatisticsController;
 
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -19,6 +20,10 @@ use App\Http\Controllers\StatisticsController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
+Route::get('/ping', function () {
+    return response()->json(['status' => 'Laravel is working']);
+});
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
@@ -44,7 +49,7 @@ Route::middleware('auth:api')->group(function () {
     Route::put('movies/{movie}', [MovieController::class, 'update']);
     Route::patch('movies/{movie}', [MovieController::class, 'update']);
     Route::delete('movies/{movie}', [MovieController::class, 'destroy']);
-    
+
     Route::apiResource('halls', HallController::class);
     Route::apiResource('sessions', SessionController::class);
     Route::get('/tickets', [TicketController::class, 'index']);
@@ -53,12 +58,12 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/tickets/{id}', [TicketController::class, 'update']);
     Route::delete('/tickets/{id}', [TicketController::class, 'destroy']);
     Route::get('/sessions/{sessionId}/seats', [TicketController::class, 'getAvailableSeats']);
-     
+
     Route::get('/statistics/overview', [StatisticsController::class, 'overview']);
-     
+
     Route::get('/users', [AuthController::class, 'getUsers']);
-  
+
     Route::put('/users/{id}', [AuthController::class, 'updateUser']);
-     
+
     Route::delete('/users/{id}', [AuthController::class, 'deleteUser']);
 });
