@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173'],
+    'allowed_origins' => ['http://movie.4519361-lr59745.twc1.net'],
 
     'allowed_origins_patterns' => [],
 
