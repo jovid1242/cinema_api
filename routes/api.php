@@ -24,6 +24,10 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Маршруты для получения фильмов (без авторизации)
+Route::get('movies', [MovieController::class, 'index']);
+Route::get('movies/{movie}', [MovieController::class, 'show']);
+
 Route::group([
     'middleware' => 'api',
     'prefix' => 'auth'
@@ -35,7 +39,12 @@ Route::group([
 });
 
 Route::middleware('auth:api')->group(function () {
-    Route::apiResource('movies', MovieController::class);
+    // Остальные маршруты для фильмов (требуют авторизации)
+    Route::post('movies', [MovieController::class, 'store']);
+    Route::put('movies/{movie}', [MovieController::class, 'update']);
+    Route::patch('movies/{movie}', [MovieController::class, 'update']);
+    Route::delete('movies/{movie}', [MovieController::class, 'destroy']);
+    
     Route::apiResource('halls', HallController::class);
     Route::apiResource('sessions', SessionController::class);
     Route::get('/tickets', [TicketController::class, 'index']);
